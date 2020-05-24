@@ -1,14 +1,22 @@
 package org.zerock;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.zerock.domain.Board;
+import org.zerock.domain.QBoard;
 import org.zerock.persistence.BoardRepository;
+
+import com.querydsl.core.BooleanBuilder;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -51,6 +59,77 @@ class Boot03ApplicationTests {
 		Collection<Board> results = repo.findByTitleContainingAndWriterContaining("10", "05");
 		results.forEach(board -> System.out.println(board));
 	}
+	
+	@Test
+	public void testByTitleAndBno() {
+		Collection<Board> results = repo.findByTitleContainingAndBnoGreaterThan("5", 50L);
+		results.forEach(board -> System.out.println(board));
+	}
+	
+	@Test
+	public void testBnoOrderBy() {
+		Collection<Board> results = repo.findByBnoGreaterThanOrderByBnoDesc(90L);
+	results.forEach(board -> System.out.println(board));
+	}
+	
+	@Test
+	public void testByBnoOrderByPaging() {
+		Pageable paging = PageRequest.of(0, 10);
+		List<Board> results = repo.findByBnoGreaterThanOrderByBnoDesc(0L, paging);
+		results.forEach(board -> System.out.println(board));
+	}
+	
+	@Test
+	public void testBnoPagingSort() {
+		Pageable paging = PageRequest.of(0, 10, Direction.DESC, "bno");
+		
+//		Collection<Board> results = repo.findByBnoGreaterThan(0L, paging);
+		Page<Board> results = repo.findByBnoGreaterThan(0L, paging);
+		
+		System.out.println("PAGE SIZE : " +results.getSize());
+		System.out.println("TOTAL PAGES : " +results.getTotalPages());
+		System.out.println("TOTAL COUNT : " +results.getTotalElements());
+		System.out.println("NEXT : " +results.nextPageable());
+		
+		List<Board> list = results.getContent();
+		list.forEach(board -> System.out.println(board));
+		
+		results.forEach(board -> System.out.println(board));
+	}
+	
+	@Test
+	public void testByTitle2() {
+		repo.findByTitle("17").forEach(board -> System.out.println(board));
+	}
+	
+	@Test
+	public void testPredicate() {
+		String type = "t";
+		String keyword = "17";
+		
+		BooleanBuilder builder = new BooleanBuilder();
+		QBoard board = QBoard.board;
+		
+		if(type.equals("t")) {
+			builder.and(board.title.like("%" + keyword + "%"));
+		}
+
+		builder.and(board.bno.gt(0L));
+		
+		Pageable pageable = PageRequest.of(0, 10);
+		
+		Page<Board> result = repo.findAll(builder, pageable);
+		
+		System.out.println("PAGE SIZE : " + result.getSize());
+		System.out.println("TOTAL PAGES : " +result.getTotalPages());
+		System.out.println("TOTAL COUNT : " +result.getTotalElements());
+		System.out.println("NEXT : " +result.nextPageable());
+		
+		List<Board> list = result.getContent();
+		
+		list.forEach(b -> System.out.println(b));
+	}
 }
+
 
 
